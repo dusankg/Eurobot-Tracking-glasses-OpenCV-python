@@ -6,4 +6,4 @@ from process import extract_glasses_location
    extract_glasses_location
 3. Funkcija bi trebalo da vrati lokaciju casa po trenutnoj zamisli
 '''
-extract_glasses_location('case/1.jpg')
+extract_glasses_location('case/3.jpg')

@@ -46,17 +46,22 @@ def extract_glasses_location(image_path):
     # funkcija vraca broj 1, 2 ili 3 u zavisnosti od prepoznaog layouta
 
     imgOrg = cv2.imread(image_path)
+    imgOrg2 = imgOrg.copy()
+    imgOrg2 = cv2.cvtColor(imgOrg2, cv2.COLOR_BGR2RGB)
     #imgOrg = imgOrg[1100:1400, 250:600]
     #imgOrg = imgOrg[1000:1450, 150:700]
     imgOrg = cv2.cvtColor(imgOrg, cv2.COLOR_BGR2HSV)
 
+    '''
+    CRVENA
+    '''
 
     # da izdvojim samo crvenu boju pravljenjem maske
     # za rgb
     #lower = [70, 0, 0]
     #upper = [255, 70, 70]
     # za hsv
-    lower = [150, 170, 200]
+    lower = [150, 170, 190]
     upper = [255, 255, 255]
     lower = np.array(lower, dtype="uint8")
     upper = np.array(upper, dtype="uint8")
@@ -86,12 +91,55 @@ def extract_glasses_location(image_path):
     if(len(contours) != 0):
         for contour in contours:
             x,y,w,h = cv2.boundingRect(contour)
-            if(w>200 and h>200):
+            if(w>150 and h>150):
                 region = image_bin[y:y+h+1,x:x+w+1];
                 regions_array.append([resize_region(region), (x,y,w,h)])
-                cv2.rectangle(imgOrg,(x,y),(x+w,y+h),(0,255,0),2)
+                color = (255,0,0)
+                cv2.rectangle(imgOrg2,(x,y),(x+w,y+h),(255,0,0),3)
+    '''
+    ZELENA
+    '''
+    # da izdvojim samo crvenu boju pravljenjem maske
+    # za rgb
+    # lower = [70, 0, 0]
+    # upper = [255, 70, 70]
+    # za hsv
+    lower = [50, 220, 50]
+    upper = [90, 255, 200]
+    lower = np.array(lower, dtype="uint8")
+    upper = np.array(upper, dtype="uint8")
+    mask = cv2.inRange(imgOrg, lower, upper)
+    output = cv2.bitwise_and(imgOrg, imgOrg, mask=mask)
 
-    plt.imshow(imgOrg)
+    imgGray = cv2.cvtColor(output, cv2.COLOR_RGB2GRAY)
+    imgGray = 255 - imgGray
+    image_bin = cv2.adaptiveThreshold(imgGray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 501, 1)
+    kernel = np.ones((4, 4))
+    image_bin = cv2.dilate(image_bin, kernel, iterations=2)
+    kernel = np.ones((4, 4))
+    image_bin = cv2.erode(image_bin, kernel, iterations=3)
+    # image_bin = cv2.dilate(image_bin, kernel, iterations=6)
+
+    image_bin = 255 - image_bin
+
+    img = image_bin
+    # cv2.imshow("izdvojene crvene case", imgOrg)
+
+    img, contours, hierarchy = cv2.findContours(image_bin.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Način određivanja kontura je promenjen na spoljašnje konture: cv2.RETR_EXTERNAL
+    # hiearchy mi zapravo i ne treba jer sam namestio na external konture
+    regions_array = []
+
+    ret = -1
+    if (len(contours) != 0):
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if (w > 100 and h > 100):
+                region = image_bin[y:y + h + 1, x:x + w + 1];
+                regions_array.append([resize_region(region), (x, y, w, h)])
+                cv2.rectangle(imgOrg2, (x, y), (x + w, y + h), (0, 255, 0), 3)
+
+    plt.imshow(imgOrg2)
     plt.show()
 
     return ret
